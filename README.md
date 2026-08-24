@@ -96,13 +96,14 @@ streamlit run streamlit_app.py
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-train.txt
 jupyter notebook notebooks/01_house_price_prediction.ipynb
 ```
 
 ## How to retrain
 
 ```bash
+pip install -r requirements-train.txt
 python -m src.train
 ```
 
@@ -111,3 +112,5 @@ Writes `reports/model_comparison.csv`, plots under `artifacts/`, and `artifacts/
 ## Technologies
 
 pandas, numpy, matplotlib, seaborn, scikit-learn, xgboost, joblib, jupyter, streamlit, plotly.
+
+`requirements.txt` is the Streamlit Cloud install (pandas, numpy, streamlit, plotly). Use `requirements-train.txt` to retrain.
