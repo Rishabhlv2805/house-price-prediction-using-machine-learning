@@ -4,6 +4,8 @@ Author: **Rishabh Sharma** ([Rishabhlv2805](https://github.com/Rishabhlv2805))
 
 Predict median house value for California census block groups using the public California Housing dataset. Four models are trained on the same preprocessed split and compared on MAE, MSE, RMSE, and R².
 
+Interactive dashboard: `streamlit_app.py` (Overview, Dataset, Models, Features, live Predict).
+
 Training pipeline: `notebooks/01_house_price_prediction.ipynb` and `src/train.py`.
 
 ## Overview
@@ -34,6 +36,7 @@ The Python pipeline in `notebooks/` and `src/` is the reproducible training path
 ## Project structure
 
 ```
+├── streamlit_app.py
 ├── notebooks/01_house_price_prediction.ipynb
 ├── src/data.py
 ├── src/models.py
@@ -41,6 +44,7 @@ The Python pipeline in `notebooks/` and `src/` is the reproducible training path
 ├── src/train.py
 ├── artifacts/
 ├── reports/model_comparison.csv
+├── reports/metrics.json
 ├── screenshots/
 ├── requirements.txt
 └── README.md
@@ -78,6 +82,15 @@ Test set (4,128 districts). Target units are $100,000; dollar figures multiply b
 - Rooms matter more than bedrooms or raw population.
 - The $500k label cap shows up in the residuals. Errors fan out as predictions approach 5.0 because the labels themselves are clipped.
 
+## How to run the Streamlit app
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
 ## How to run the notebook
 
 ```bash
@@ -97,4 +110,4 @@ Writes `reports/model_comparison.csv`, plots under `artifacts/`, and `artifacts/
 
 ## Technologies
 
-pandas, numpy, matplotlib, seaborn, scikit-learn, xgboost, joblib, jupyter.
+pandas, numpy, matplotlib, seaborn, scikit-learn, xgboost, joblib, jupyter, streamlit, plotly.
