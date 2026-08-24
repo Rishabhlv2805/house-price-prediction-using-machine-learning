@@ -88,13 +88,12 @@ Income is the loudest signal. Occupancy is next — crowded block groups sell ch
 
 ## Dashboard
 
-The Streamlit app (`streamlit_app.py`) is the interactive version of this notebook:
+The Streamlit app (`streamlit_app.py`) is the interactive studio:
 
-- **Overview** — size of the data, winning model, headline numbers
-- **Dataset** — target histogram, income vs price, California map, correlation heatmap
-- **Models** — full metric table, RMSE bars, actual vs predicted, residuals
-- **Features** — XGBoost importance
-- **Predict** — sliders and region presets (Bay Area, Los Angeles, San Diego, …). The live dollar figure uses the **linear** coefficients so each slider has an additive, inspectable effect. The published champion is still XGBoost.
+- **Studio** — R² scorecard, holdout RMSE, importance, headline numbers
+- **Data** — target histogram, income vs price, California map, correlation heatmap
+- **Models** — MAE / MSE / RMSE / R², actual vs predicted, residuals
+- **Estimate** — sliders and region presets. The live dollar figure uses the **linear** coefficients so each slider has an additive, inspectable effect. The published champion is still XGBoost.
 
 Open it here: [house-price-prediction-using-machine-learning-rs.streamlit.app](https://house-price-prediction-using-machine-learning-rs.streamlit.app/)
 
