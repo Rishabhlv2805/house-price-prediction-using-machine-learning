@@ -2,17 +2,17 @@
 
 Author: **Rishabh Sharma** ([Rishabhlv2805](https://github.com/Rishabhlv2805))
 
+**Live app:** [https://house-price-prediction-using-machine-learning-rs.streamlit.app/](https://house-price-prediction-using-machine-learning-rs.streamlit.app/)
+
 Predict median house value for California census block groups using the public California Housing dataset. Four models are trained on the same preprocessed split and compared on MAE, MSE, RMSE, and R².
 
 Interactive dashboard: `streamlit_app.py` (Overview, Dataset, Models, Features, live Predict).
 
-Training pipeline: `notebooks/01_house_price_prediction.ipynb` and `src/train.py`.
+The Python pipeline in `notebooks/` and `src/` is the reproducible training path.
 
 ## Overview
 
 House prices mix income, occupancy, and location. This project scores median block-group value from those signals so the models can be compared fairly on a held-out test set.
-
-The Python pipeline in `notebooks/` and `src/` is the reproducible training path.
 
 ## Dataset
 
@@ -47,6 +47,7 @@ The Python pipeline in `notebooks/` and `src/` is the reproducible training path
 ├── reports/metrics.json
 ├── screenshots/
 ├── requirements.txt
+├── requirements-train.txt
 └── README.md
 ```
 
@@ -74,6 +75,20 @@ Test set (4,128 districts). Target units are $100,000; dollar figures multiply b
 
 **Best model:** XGBoost (lowest RMSE, highest R²). Saved to `artifacts/best_model.joblib`.
 
+## Streamlit dashboard
+
+Five pages, same layout as the churn project:
+
+| Page | What it shows |
+|------|----------------|
+| Overview | Sample size, best model, R², project summary |
+| Dataset | Target distribution, income vs price, California map, correlation heatmap |
+| Models | MAE / MSE / RMSE / R² table, RMSE bars, actual vs predicted, residuals |
+| Features | XGBoost importance (income 37.8%, occupancy, lat/long) |
+| Predict | Sliders + Bay Area / Inland / Crowded presets; live linear estimate in USD |
+
+Live scoring uses the trained linear coefficients so every slider has an additive, inspectable effect. The published champion remains XGBoost.
+
 ## Key insights
 
 - Median income is 37.8% of XGBoost importance — ability to pay is the loudest price signal.
@@ -83,6 +98,8 @@ Test set (4,128 districts). Target units are $100,000; dollar figures multiply b
 - The $500k label cap shows up in the residuals. Errors fan out as predictions approach 5.0 because the labels themselves are clipped.
 
 ## How to run the Streamlit app
+
+**Live:** [https://house-price-prediction-using-machine-learning-rs.streamlit.app/](https://house-price-prediction-using-machine-learning-rs.streamlit.app/)
 
 ```bash
 python -m venv .venv
