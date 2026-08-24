@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 
 ROOT = Path(__file__).resolve().parent
 METRICS_PATH = ROOT / "reports" / "metrics.json"
@@ -23,6 +24,71 @@ MUTED = "#6F675C"
 ACCENT = "#3E5363"
 GRID = "rgba(28,25,21,0.12)"
 USD = 100_000
+
+APP_CSS = """
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap");
+
+html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewBlockContainer"] {
+  background: #F3EEE4 !important;
+  color: #1C1915;
+}
+[data-testid="stHeader"] { background: transparent; }
+[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"] { display: none; }
+footer, #MainMenu, .stDeployButton, [data-testid="stDeployButton"] { display: none !important; }
+iframe[height="0"], iframe[height="0px"] { display: none !important; }
+
+h1, h2, h3, .serif, .wordmark, .hero, .hero-num, .stat-card .value, .insight h3 {
+  font-family: "Instrument Serif", Georgia, serif;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: #1C1915;
+}
+p, label, .stMarkdown, .stCaption, [data-testid="stWidgetLabel"] {
+  font-family: "Figtree", Helvetica, sans-serif;
+}
+
+.kicker { color: #6F675C; letter-spacing: 0.18em; font-size: 0.72rem; text-transform: uppercase; font-weight: 500; margin: 0; }
+.hero { font-size: clamp(2.4rem, 5vw, 3.6rem); line-height: 1.08; margin: 0.35rem 0 0.8rem; }
+.lede { color: #6F675C; font-size: 1.05rem; max-width: 36rem; }
+.muted { color: #6F675C; }
+
+.scorecard { background: #EBE4D6; border: 1px solid rgba(28,25,21,0.12); border-radius: 16px; padding: 1.4rem 1.5rem; }
+.hero-num { font-size: 4.4rem; line-height: 0.9; margin: 0.6rem 0 0.2rem; }
+.stat-card { background: #FCFAF6; border: 1px solid rgba(28,25,21,0.12); border-radius: 12px; padding: 0.95rem 1.05rem; }
+.stat-card .value { font-size: 1.7rem; margin: 0.2rem 0 0; }
+.insight { background: #FCFAF6; border: 1px solid rgba(28,25,21,0.12); border-radius: 12px; padding: 1.1rem 1.15rem; height: 100%; }
+.insight h3 { font-size: 1.15rem; margin: 0 0 0.4rem; }
+
+.wordmark { font-size: 1.85rem; margin: 0; }
+.author { color: #6F675C; font-size: 0.85rem; margin: 0; text-align: right; }
+.author a { color: #1C1915; text-decoration: none; border-bottom: 1px solid rgba(28,25,21,0.25); }
+
+div[data-testid="stMetric"] { background: #FCFAF6; border: 1px solid rgba(28,25,21,0.12); border-radius: 12px; padding: 0.8rem 1rem; }
+.stRadio [role="radiogroup"] { background: #EBE4D6; padding: 0.25rem; border-radius: 10px; }
+.stRadio [data-baseweb="radio"] { padding: 0.35rem 0.85rem; }
+"""
+
+
+def inject_css() -> None:
+    """Write CSS into the parent document. Streamlit sanitizes <style> in markdown."""
+    components.html(
+        f"""
+        <script>
+        (function () {{
+          const doc = window.parent.document;
+          let style = doc.getElementById("hp-css");
+          if (!style) {{
+            style = doc.createElement("style");
+            style.id = "hp-css";
+            doc.head.appendChild(style);
+          }}
+          style.textContent = {json.dumps(APP_CSS)};
+        }})();
+        </script>
+        """,
+        height=0,
+        scrolling=False,
+    )
 
 
 @st.cache_data
@@ -72,52 +138,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
-
-st.markdown(
-    """
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-    <style>
-      html, body, .stApp, [data-testid="stAppViewContainer"] { background: #F3EEE4 !important; color: #1C1915; }
-      [data-testid="stHeader"] { background: transparent; }
-      [data-testid="stToolbar"] { display: none; }
-      [data-testid="stDecoration"] { display: none; }
-      [data-testid="stStatusWidget"] { display: none; }
-      footer { visibility: hidden; }
-      .stDeployButton, [data-testid="stDeployButton"] { display: none !important; }
-      #MainMenu { visibility: hidden; }
-
-      h1, h2, h3, .serif { font-family: "Instrument Serif", Georgia, serif; letter-spacing: -0.03em; line-height: 1.15; color: #1C1915; }
-      p, label, .stMarkdown, .stCaption { font-family: "Figtree", Helvetica, sans-serif; }
-
-      .kicker { color: #6F675C; letter-spacing: 0.18em; font-size: 0.72rem; text-transform: uppercase; font-weight: 500; margin: 0; }
-      .hero { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(2.4rem, 5vw, 3.6rem); line-height: 1.08; margin: 0.35rem 0 0.8rem; }
-      .lede { color: #6F675C; font-size: 1.05rem; max-width: 36rem; }
-      .muted { color: #6F675C; }
-
-      .scorecard { background: #EBE4D6; border: 1px solid rgba(28,25,21,0.12); border-radius: 16px; padding: 1.4rem 1.5rem; }
-      .hero-num { font-family: "Instrument Serif", Georgia, serif; font-size: 4.4rem; line-height: 0.9; margin: 0.6rem 0 0.2rem; }
-      .stat-card { background: #FCFAF6; border: 1px solid rgba(28,25,21,0.12); border-radius: 12px; padding: 0.95rem 1.05rem; }
-      .stat-card .value { font-family: "Instrument Serif", Georgia, serif; font-size: 1.7rem; margin: 0.2rem 0 0; }
-      .insight { background: #FCFAF6; border: 1px solid rgba(28,25,21,0.12); border-radius: 12px; padding: 1.1rem 1.15rem; height: 100%; }
-      .insight h3 { font-size: 1.15rem; margin: 0 0 0.4rem; }
-
-      div[data-testid="stMetric"] { background: #FCFAF6; border: 1px solid rgba(28,25,21,0.12); border-radius: 12px; padding: 0.8rem 1rem; }
-      [data-testid="stHorizontalBlock"] { gap: 0.8rem; }
-
-      .stRadio > div { gap: 0.25rem; }
-      .stRadio [role="radiogroup"] { background: #EBE4D6; padding: 0.25rem; border-radius: 10px; gap: 0 !important; }
-      .stRadio [data-baseweb="radio"] { padding: 0.35rem 0.85rem; }
-
-      .topbar { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
-      .wordmark { font-family: "Instrument Serif", Georgia, serif; font-size: 1.85rem; letter-spacing: -0.03em; }
-      .author { color: #6F675C; font-size: 0.85rem; }
-      .author a { color: #1C1915; text-decoration: none; border-bottom: 1px solid rgba(28,25,21,0.25); }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+inject_css()
 
 m = load_metrics()
 d = m["dataset"]
