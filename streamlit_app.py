@@ -94,6 +94,11 @@ d = m["dataset"]
 winner_name = m["winner"]
 winner = next(r for r in m["models"] if r["winner"])
 linear = next(r for r in m["models"] if r["name"] == "Linear Regression")
+importance_map = {row["feature"]: float(row["importance"]) for row in m["importance"]}
+income_pct = importance_map.get("MedInc", 0) * 100
+occupancy_pct = importance_map.get("AveOccup", 0) * 100
+geo_pct = (importance_map.get("Latitude", 0) + importance_map.get("Longitude", 0)) * 100
+test_n = int(d.get("test_size", 4128))
 
 with st.sidebar:
     st.markdown("**House Price Prediction**")
@@ -130,7 +135,7 @@ if page == "Overview":
     st.subheader("Why this problem")
     st.write(
         "Median block-group value is a mix of income, occupancy, and location. "
-        "This lab trains four regressors on the same split so the models can be "
+        "This project trains four regressors on the same split so the models can be "
         "compared fairly, then inspects which levers actually move the price."
     )
     left, right = st.columns(2)
@@ -140,14 +145,14 @@ if page == "Overview":
             "- Audited missing values (none) and the $500k target cap\n"
             "- Winsorized occupancy / room outliers on the **train** fold only\n"
             "- Trained Linear Regression, Decision Tree, Random Forest, XGBoost\n"
-            "- Compared MAE, MSE, RMSE, and R² on 4,128 held-out districts"
+            f"- Compared MAE, MSE, RMSE, and R² on {test_n:,} held-out districts"
         )
     with right:
         st.markdown("**What stood out**")
         st.write(
             f"- **{winner_name}** RMSE {money(winner['rmse_usd'])} vs linear {money(linear['rmse_usd'])}\n"
-            "- Median income is **37.8%** of XGBoost importance\n"
-            "- Latitude + longitude together are ~**26%**\n"
+            f"- Median income is **{income_pct:.1f}%** of XGBoost importance\n"
+            f"- Latitude + longitude together are ~**{geo_pct:.0f}%**\n"
             "- Residuals fan out at the $500k label censor"
         )
 
@@ -221,7 +226,7 @@ elif page == "Dataset":
             )
         )
         fig.update_layout(
-            title="Where expensive lots sit",
+            title="California block groups",
             xaxis_title="Longitude",
             yaxis_title="Latitude",
         )
@@ -262,7 +267,7 @@ elif page == "Dataset":
 
 elif page == "Models":
     st.header("Model comparison")
-    st.caption("Test set · 4,128 districts · no test-set leakage in preprocessing")
+    st.caption(f"Test set · {test_n:,} districts · no test-set leakage in preprocessing")
 
     res = pd.DataFrame(m["models"])
     show = res.rename(
@@ -375,11 +380,11 @@ elif page == "Features":
     st.plotly_chart(dark_layout(fig, 420), use_container_width=True)
 
     st.markdown(
-        """
+        f"""
         **Reading this**
-        - Median income is 37.8% of the signal — ability to pay.
-        - Occupancy is the second single feature: crowded block groups trade cheaper.
-        - Latitude and longitude together rival occupancy — coastal and Bay Area premiums.
+        - Median income is {income_pct:.1f}% of the signal — ability to pay.
+        - Occupancy is the second single feature ({occupancy_pct:.1f}%): crowded block groups trade cheaper.
+        - Latitude and longitude together are {geo_pct:.0f}% — coastal and inland premiums after income.
         - Rooms matter more than bedrooms or raw population.
         """
     )

@@ -1,4 +1,4 @@
-"""Model zoo, training, and test-set evaluation helpers."""
+"""Train the four regressors and score them on the same holdout fold."""
 
 from __future__ import annotations
 
@@ -53,9 +53,9 @@ def _decision_tree() -> GridSearchCV:
 def build_estimators() -> dict[str, tuple[RegressorMixin, bool]]:
     """Map display name → (estimator, needs_scaled_X).
 
-    Linear regression is scale-sensitive (regular-ish coefficients, comparable
-    feature magnitudes). Axis-aligned trees ignore monotonic transforms, so we
-    keep them on the winsorized but unscaled matrices.
+    Linear regression is scale-sensitive, so it sees standardized features.
+    Axis-aligned trees ignore monotonic transforms, so they stay on the
+    winsorized but unscaled matrices.
     """
     return {
         "Linear Regression": (LinearRegression(), True),

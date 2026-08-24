@@ -1,4 +1,4 @@
-"""CLI: train all models, write reports, persist the winner, export the web payload."""
+"""CLI: train all models, write reports, persist the winner, refresh metrics.json."""
 
 from __future__ import annotations
 
@@ -73,27 +73,7 @@ def _region(lat: float, lon: float) -> str:
     return "Interior California"
 
 
-def _export_xgb_booster(estimator) -> dict | None:
-    if not hasattr(estimator, "get_booster"):
-        return None
-    booster = estimator.get_booster()
-    trees = [json.loads(blob) for blob in booster.get_dump(dump_format="json")]
-    config = json.loads(booster.save_config())
-    learner = config.get("learner", {})
-    param = learner.get("learner_model_param", {})
-    raw_base = param.get("base_score", 0.5)
-    if isinstance(raw_base, str):
-        try:
-            parsed = json.loads(raw_base)
-            raw_base = parsed[0] if isinstance(parsed, list) else parsed
-        except json.JSONDecodeError:
-            raw_base = float(raw_base)
-    if isinstance(raw_base, list):
-        raw_base = raw_base[0]
-    return {"base_score": float(raw_base), "trees": trees}
-
-
-def export_web_payload(
+def export_metrics(
     frame: pd.DataFrame,
     split,
     scores,
@@ -148,24 +128,6 @@ def export_web_payload(
             }
         )
 
-    # Trees are several MB; the web studio uses the linear explainer instead.
-    xgb_bundle = None
-    xgb_score = next((s for s in scores if s.name == "XGBoost"), None)
-
-    verify = []
-    sample_idx = rng.choice(len(split.X_test), size=12, replace=False)
-    if xgb_score is not None:
-        for i in sample_idx:
-            feats = {col: float(split.X_test.iloc[i][col]) for col in FEATURE_COLUMNS}
-            verify.append(
-                {
-                    "features": feats,
-                    "xgb": float(xgb_score.y_pred[i]),
-                    "linear": float(linear.y_pred[i]),
-                    "actual": float(y_test[i]),
-                }
-            )
-
     describe = frame.describe().round(4).to_dict()
 
     payload = {
@@ -174,6 +136,8 @@ def export_web_payload(
             "source": "sklearn.datasets.fetch_california_housing",
             "n_samples": int(len(frame)),
             "n_features": len(FEATURE_COLUMNS),
+            "train_size": int(len(split.X_train)),
+            "test_size": int(len(split.X_test)),
             "target": TARGET,
             "target_unit": "100000 USD",
             "usd_per_unit": USD_PER_UNIT,
@@ -256,8 +220,6 @@ def export_web_payload(
             "scaler_mean": {col: float(m) for col, m in zip(FEATURE_COLUMNS, scaler.mean_)},
             "scaler_scale": {col: float(m) for col, m in zip(FEATURE_COLUMNS, scaler.scale_)},
         },
-        "xgboost": xgb_bundle,
-        "verify": verify,
         "presets": presets,
     }
     return payload
@@ -267,11 +229,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Train house-price models.")
     parser.add_argument("--skip-plots", action="store_true")
     parser.add_argument(
-        "--web-json",
+        "--metrics-json",
         action="append",
         type=Path,
         default=[],
-        help="Optional extra JSON payload path (studio export).",
+        help="Extra path to write the dashboard JSON (reports/metrics.json is always written).",
     )
     args = parser.parse_args()
 
@@ -313,12 +275,12 @@ def main() -> None:
         plot_residuals(split.y_test.to_numpy(), winner.y_pred, ARTIFACTS / "07_residuals.png")
         plot_feature_importance(importance, ARTIFACTS / "08_feature_importance.png")
 
-    if args.web_json:
-        payload = export_web_payload(frame, split, scores, importance, winner)
-        for dest in args.web_json:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_text(json.dumps(payload))
-            print(f"Wrote {dest} ({dest.stat().st_size // 1024} KB)")
+    payload = export_metrics(frame, split, scores, importance, winner)
+    dests = [REPORTS / "metrics.json", *args.metrics_json]
+    for dest in dests:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(json.dumps(payload))
+        print(f"Wrote {dest} ({dest.stat().st_size // 1024} KB)")
 
     print("Done.")
 

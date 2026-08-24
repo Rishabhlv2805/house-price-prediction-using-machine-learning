@@ -1,9 +1,9 @@
 """Load, inspect, and split the California Housing dataset.
 
 The target (MedHouseVal) is median house value in units of $100,000.
-Features are already numeric, so encoding is unnecessary. We still run a
-missing-value audit and winsorize a handful of physically implausible
-occupancy / room ratios that are known data-entry artefacts.
+Features are already numeric, so encoding is unnecessary. The pipeline
+still audits missing values and winsorizes a handful of physically
+implausible occupancy / room ratios that are known data-entry artefacts.
 """
 
 from __future__ import annotations
@@ -57,7 +57,7 @@ def load_housing_frame() -> pd.DataFrame:
 
 
 def missing_value_report(frame: pd.DataFrame) -> pd.Series:
-    """Count nulls per column — California Housing is complete, but we prove it."""
+    """Count nulls per column. California Housing is complete; this proves it."""
     return frame.isna().sum()
 
 

@@ -9,3 +9,4 @@ dist/
 artifacts/*.joblib
 artifacts/*.png
 .pytest_cache/
+.streamlit/secrets.toml
