@@ -202,7 +202,7 @@ if page == "Studio":
         (s1, "Districts", f"{d['n_samples']:,}"),
         (s2, "Features", str(d["n_features"])),
         (s3, "Train / test", "80 / 20"),
-        (s4, "Linear R²", f"{linear['r2']:.3f}"),
+        (s4, "Linear R²", f"{linear['r2']:.4f}"),
     ):
         col.markdown(
             f'<div class="stat-card"><p class="kicker">{label}</p><p class="value">{value}</p></div>',
@@ -252,7 +252,7 @@ if page == "Studio":
                 "Model": row["name"] + ("  · winner" if row["winner"] else ""),
                 "MAE": money(row["mae_usd"]),
                 "RMSE": money(row["rmse_usd"]),
-                "R²": f"{row['r2']:.3f}",
+                "R²": f"{row['r2']:.4f}",
             }
             for row in m["models"]
         ]
