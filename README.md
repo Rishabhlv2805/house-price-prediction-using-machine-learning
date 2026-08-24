@@ -1,24 +1,27 @@
 # House Price Prediction using Machine Learning
 
-![Python](https://img.shields.io/badge/Python-3.10+-1C1915?style=flat-square)
-![scikit-learn](https://img.shields.io/badge/scikit--learn-1.7-3E5363?style=flat-square)
-![XGBoost](https://img.shields.io/badge/XGBoost-3.2-3E5363?style=flat-square)
-![License: MIT](https://img.shields.io/badge/License-MIT-F3EEE4?style=flat-square&labelColor=1C1915)
+Author: **Rishabh Sharma** ([Rishabhlv2805](https://github.com/Rishabhlv2805))
 
-Regression models that predict median house value for California census block groups. Four estimators, one 80/20 holdout, no test-set leakage.
+Predict median house value for California census block groups using the public California Housing dataset. Four models are trained on the same preprocessed split and compared on MAE, MSE, RMSE, and R².
 
-**Winner: XGBoost** — test R² **0.844**, RMSE **$45,261**, MAE **$29,923**.
+Training pipeline: `notebooks/01_house_price_prediction.ipynb` and `src/train.py`.
 
 ## Overview
 
-This project loads the California Housing dataset shipped with scikit-learn (20,640 districts, 8 numeric features, 0 missing values), winsorizes physically implausible occupancy/room ratios using *training-fold* quantiles, and compares linear regression, a lightly tuned decision tree, a random forest, and XGBoost.
+House prices mix income, occupancy, and location. This project scores median block-group value from those signals so the models can be compared fairly on a held-out test set.
+
+The Python pipeline in `notebooks/` and `src/` is the reproducible training path.
 
 ## Dataset
 
-[California Housing](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_california_housing.html) (`sklearn.datasets.fetch_california_housing`). 20,640 samples.
+- **Name:** California Housing
+- **Source:** [scikit-learn — fetch_california_housing](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_california_housing.html)
+- **Size:** 20,640 districts × 8 features + target
+- **Target:** `MedHouseVal` — median house value in units of $100,000, censored at 5.00001 ($500,000)
+- **Note:** The frame is fully numeric and has 0 missing values. Extreme `AveOccup` / `AveRooms` ratios are treated as data-entry artefacts and winsorized at the 1st/99th **training** percentiles so the test fold cannot leak.
 
 | Column | Meaning | Unit |
-| --- | --- | --- |
+|--------|---------|------|
 | MedInc | Median block-group income | tens of thousands USD |
 | HouseAge | Median house age | years |
 | AveRooms | Average rooms per household | count |
@@ -26,92 +29,72 @@ This project loads the California Housing dataset shipped with scikit-learn (20,
 | Population | Block-group population | people |
 | AveOccup | Average household occupancy | people |
 | Latitude / Longitude | Block-group centroid | degrees |
-| **MedHouseVal** (target) | Median house value | **$100,000s**, censored at 5.00001 |
+| MedHouseVal (target) | Median house value | $100,000s |
 
-## Approach
+## Project structure
 
-- Inspect shape, dtypes, missingness, and the target distribution
-- Winsorize AveRooms / AveBedrms / Population / AveOccup at the 1st/99th **training** percentiles
-- 80/20 shuffle split, `random_state=42`
-- `StandardScaler` fitted on train only — used by linear regression; trees see unscaled features
-- Train four models, score MAE / MSE / RMSE / R² on the holdout
-- Read feature importance from the winner; plot actual vs predicted and residuals
+```
+├── notebooks/01_house_price_prediction.ipynb
+├── src/data.py
+├── src/models.py
+├── src/visualize.py
+├── src/train.py
+├── artifacts/
+├── reports/model_comparison.csv
+├── screenshots/
+├── requirements.txt
+└── README.md
+```
 
-## Models
+## Models used
 
 - Linear Regression
-- Decision Tree Regressor (grid over `max_depth` ∈ {6,8,10,12} and `min_samples_leaf` ∈ {4,8,16})
-- Random Forest Regressor (`n_estimators=200`)
-- XGBoost Regressor (`n_estimators=300`, `learning_rate=0.05`, `max_depth=6`)
+- Decision Tree (grid over `max_depth` ∈ {6, 8, 10, 12} and `min_samples_leaf` ∈ {4, 8, 16})
+- Random Forest (`n_estimators=200`)
+- XGBoost (`n_estimators=300`, `learning_rate=0.05`, `max_depth=6`)
+
+**Split:** 80/20, shuffled, `random_state=42`.
+
+**Preprocessing:** winsorize occupancy/room outliers using train quantiles; `StandardScaler` fitted on train only for linear regression. Tree models use the unscaled matrix.
 
 ## Results
 
-Holdout (n = 4,128). Target units are $100,000; dollar columns multiply by 100,000.
+Test set (4,128 districts). Target units are $100,000; dollar figures multiply by 100,000.
 
-| Model | MAE | RMSE | R² Score |
-| --- | ---: | ---: | ---: |
-| **XGBoost** | **0.299 ($29.9k)** | **0.453 ($45.3k)** | **0.844** |
-| Random Forest | 0.327 ($32.7k) | 0.505 ($50.5k) | 0.805 |
-| Decision Tree | 0.405 ($40.5k) | 0.598 ($59.8k) | 0.727 |
-| Linear Regression | 0.498 ($49.8k) | 0.680 ($68.0k) | 0.647 |
+| Model               | MAE              | MSE    | RMSE             | R²     |
+|---------------------|------------------|--------|------------------|--------|
+| Linear Regression   | 0.4981 ($49.8k)  | 0.4620 | 0.6797 ($68.0k)  | 0.6474 |
+| Decision Tree       | 0.4045 ($40.5k)  | 0.3575 | 0.5979 ($59.8k)  | 0.7272 |
+| Random Forest       | 0.3269 ($32.7k)  | 0.2551 | 0.5050 ($50.5k)  | 0.8054 |
+| XGBoost             | **0.2992 ($29.9k)** | **0.2049** | **0.4526 ($45.3k)** | **0.8437** |
 
-XGBoost wins because prices mix smooth income gradients with sharp geographic breaks a single hyperplane cannot represent. Boosting 300 shallow trees beat both a lone tree and a 200-tree forest on the same split.
+**Best model:** XGBoost (lowest RMSE, highest R²). Saved to `artifacts/best_model.joblib`.
 
-## Demo
+## Key insights
 
-Actual vs predicted (XGBoost holdout) and feature importance:
+- Median income is 37.8% of XGBoost importance — ability to pay is the loudest price signal.
+- Latitude + longitude together are ~26% — coastal and Bay Area premiums remain after income is controlled.
+- Average occupancy is the second single feature (13.8%) — crowded block groups trade cheaper.
+- Rooms matter more than bedrooms or raw population.
+- The $500k label cap shows up in the residuals. Errors fan out as predictions approach 5.0 because the labels themselves are clipped.
 
-![Actual versus predicted](screenshots/06_actual_vs_predicted.png)
-
-![Feature importance](screenshots/08_feature_importance.png)
-
-## Key Insights
-
-- **Median income is 37.8% of XGBoost importance** — ability to pay is the loudest signal.
-- **Latitude + longitude together are ~26%** — coastal and Bay Area premiums remain after income is controlled.
-- **Average occupancy is the second single feature (13.8%)** — crowded block groups trade cheaper.
-- **Rooms matter more than bedrooms or raw population.**
-- **The $500k censor shows up in the residuals.** Errors fan out as predictions approach 5.0 because the labels themselves are clipped.
-
-## Project Structure
-
-```text
-.
-├── notebooks/01_house_price_prediction.ipynb
-├── src/data.py          # load, winsorize, split, scale
-├── src/models.py        # estimators + metrics
-├── src/visualize.py     # figures written to artifacts/
-├── src/train.py         # python -m src.train
-├── artifacts/           # plots + joblib of the winner
-├── reports/             # model_comparison.csv
-├── screenshots/         # README figures
-└── requirements.txt
-```
-
-## Setup
+## How to run the notebook
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
+jupyter notebook notebooks/01_house_price_prediction.ipynb
 ```
 
-## How to Run
-
-1. Notebook: `jupyter notebook notebooks/01_house_price_prediction.ipynb`
-2. CLI (writes reports, plots, and `artifacts/best_model.joblib`):
+## How to retrain
 
 ```bash
 python -m src.train
 ```
 
-## Future Work
+Writes `reports/model_comparison.csv`, plots under `artifacts/`, and `artifacts/best_model.joblib`.
 
-- Ames Housing (many categoricals, a richer feature set)
-- Optuna / a wider XGBoost search
-- Spatial cross-validation so neighbouring block groups cannot leak
-- SHAP values for the booster, not just gain importance
+## Technologies
 
-## License
-
-MIT
+pandas, numpy, matplotlib, seaborn, scikit-learn, xgboost, joblib, jupyter.
